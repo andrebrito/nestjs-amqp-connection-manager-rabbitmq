@@ -4,12 +4,9 @@ import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpCon
 
 @Injectable()
 export class AmqpService {
-  private readonly xName = 'testing.exchange';
-  private readonly qName = 'testing.queue';
-  private readonly rk = 'testing.routing.key';
-
-  // TODO Check exchange exists before?
-  // TODO Always use the exchange
+  private readonly exchangeName = 'testing.exchange';
+  private readonly queueName = 'testing.queue';
+  private readonly routingKey = 'testing.routing.key';
 
   private connection: IAmqpConnectionManager;
   private channelWrapper: ChannelWrapper;
@@ -25,10 +22,14 @@ export class AmqpService {
     this.channelWrapper = this.connection.createChannel({
       json: true,
       setup: (channel: Channel) => {
-        channel.assertQueue(this.qName, { durable: true });
-        channel.assertExchange(this.xName, 'direct');
+        channel.assertQueue(this.queueName, { durable: true });
+        channel.assertExchange(this.exchangeName, 'direct');
 
-        return channel.bindQueue(this.qName, this.xName, this.rk);
+        return channel.bindQueue(
+          this.queueName,
+          this.exchangeName,
+          this.routingKey,
+        );
       },
     });
 
@@ -43,15 +44,9 @@ export class AmqpService {
     const options = { persistent: true, timeout: 500 };
 
     try {
-      await this.channelWrapper.publish(
-        this.xName,
-        this.rk,
-        new Date().toLocaleTimeString(),
-        options,
-      );
-
-      const response = await this.channelWrapper.sendToQueue(
-        this.qName,
+      const response = await this.channelWrapper.publish(
+        this.exchangeName,
+        this.routingKey,
         message,
         options,
       );
