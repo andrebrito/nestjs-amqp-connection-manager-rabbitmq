@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import amqp, { Channel, ChannelWrapper } from 'amqp-connection-manager';
 import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpConnectionManager';
 
 @Injectable()
 export class AmqpService {
+  private readonly logger = new Logger('logger');
   private readonly exchangeName = 'testing.exchange';
   private readonly queueName = 'testing.queue';
   private readonly routingKey = 'testing.routing.key';
@@ -11,13 +12,8 @@ export class AmqpService {
   private connection: IAmqpConnectionManager;
   private channelWrapper: ChannelWrapper;
 
-  private isConnected = false;
-
   private async connect() {
-    this.connection = amqp.connect('amqp://localhost:5672', {
-      connectionOptions: { timeout: 4000 },
-      heartbeatIntervalInSeconds: 2,
-    });
+    this.connection = amqp.connect('amqp://localhost:5672');
 
     this.channelWrapper = this.connection.createChannel({
       json: true,
@@ -32,12 +28,10 @@ export class AmqpService {
         );
       },
     });
-
-    this.isConnected = true;
   }
 
   async emit(message: any) {
-    if (!this.isConnected) {
+    if (!this.connection || !this.connection.isConnected()) {
       await this.connect();
     }
 
@@ -54,7 +48,7 @@ export class AmqpService {
       return response;
     } catch (error) {
       if (error.message === 'timeout') {
-        this.isConnected = false;
+        this.logger.log('Timeout error, will try to reconnect next message.');
       }
     }
   }
