@@ -9,7 +9,10 @@ export class AppService {
     private amqpService: AmqpService,
   ) {}
 
-  // NestJS + RabbitMQ
+  /**
+   * NestJS + RabbitMQ
+   * Not working the way it should.
+   */
   // async post() {
   //   const res = this.client.emit('rabbits_queue', randomUUID()).pipe(
   //     map((p) => {
