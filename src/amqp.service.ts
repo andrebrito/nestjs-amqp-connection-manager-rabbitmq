@@ -8,6 +8,9 @@ export class AmqpService {
   private readonly qName = 'testing.queue';
   private readonly rk = 'testing.routing.key';
 
+  // TODO Check exchange exists before?
+  // TODO Always use the exchange
+
   private connection: IAmqpConnectionManager;
   private channelWrapper: ChannelWrapper;
 
