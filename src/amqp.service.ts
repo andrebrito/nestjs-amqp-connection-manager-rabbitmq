@@ -19,7 +19,10 @@ export class AmqpService {
       json: true,
       setup: (channel: Channel) => {
         channel.assertQueue(this.queueName, { durable: true });
-        channel.assertExchange(this.exchangeName, 'direct');
+        channel.assertExchange(this.exchangeName, 'x-delayed-message', {
+          durable: true,
+          arguments: { 'x-delayed-type': 'direct' },
+        });
 
         return channel.bindQueue(
           this.queueName,
@@ -35,7 +38,11 @@ export class AmqpService {
       await this.connect();
     }
 
-    const options = { persistent: true, timeout: 500 };
+    const options = {
+      persistent: true,
+      timeout: 500,
+      headers: { 'x-delay': 20000 },
+    };
 
     try {
       const response = await this.channelWrapper.publish(
