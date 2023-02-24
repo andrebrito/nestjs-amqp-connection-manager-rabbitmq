@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { AmqpService } from './amqp.service';
+import { AmqpProducerService } from './amqp-producer.service';
 
 @Injectable()
 export class AppService {
-  constructor(private amqpService: AmqpService) {}
+  constructor(private amqpService: AmqpProducerService) {}
 
   // AMQP Connection Manager
   async post() {
