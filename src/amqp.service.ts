@@ -9,6 +9,8 @@ export class AmqpService {
   private readonly queueName = 'testing.queue';
   private readonly routingKey = 'testing.routing.key';
 
+  // private readonly
+
   private connection: IAmqpConnectionManager;
   private channelWrapper: ChannelWrapper;
 
@@ -18,6 +20,9 @@ export class AmqpService {
     this.channelWrapper = this.connection.createChannel({
       json: true,
       setup: (channel: Channel) => {
+        // Dead Letter
+        // channel.assertQueue('');
+
         channel.assertQueue(this.queueName, { durable: true });
         channel.assertExchange(this.exchangeName, 'x-delayed-message', {
           durable: true,
