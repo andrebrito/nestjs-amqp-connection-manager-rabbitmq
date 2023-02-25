@@ -14,7 +14,7 @@ export class AmqpProducerService {
     const options = {
       persistent: true,
       timeout: 500,
-      headers: { 'x-delay': 20000 },
+      headers: { 'x-delay': 1000 }, // 1000 ms
     };
 
     try {

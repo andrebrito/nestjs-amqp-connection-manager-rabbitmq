@@ -1,4 +1,5 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { ChannelWrapper } from 'amqp-connection-manager';
 import { Channel, ConsumeMessage } from 'amqplib';
 import { ConnectionFactoryService } from './connection-factory.service';
 import { QUEUE } from './global';
@@ -12,16 +13,22 @@ export class AmqpConsumerService implements OnApplicationBootstrap {
       .getConnection()
       .then(({ channel: appChannel }) =>
         appChannel.addSetup((channel: Channel) =>
-          channel.consume(QUEUE, this.handle),
+          channel.consume(
+            QUEUE,
+            (message: ConsumeMessage) => this.handle(message, appChannel),
+            { noAck: false },
+          ),
         ),
       );
   }
 
-  private async handle(message: ConsumeMessage) {
+  private handle(message: ConsumeMessage, channel: ChannelWrapper) {
     console.log(
-      'consumming...',
+      'acking message...',
       message.properties.headers['x-delay'],
       Buffer.from(message.content).toString(),
     );
+
+    channel.ack(message);
   }
 }
