@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConnectionFactoryService } from './connection-factory.service';
-import { EXCHANGE, ROUTING_KEY } from './global';
+import { CURRENT_TRY, EXCHANGE, ROUTING_KEY } from './global';
 
 @Injectable()
 export class AmqpProducerService {
@@ -8,13 +8,13 @@ export class AmqpProducerService {
 
   constructor(private connectionFactoryService: ConnectionFactoryService) {}
 
-  async emit(message: any) {
+  async emit(message: any, delay = 1000, currentTry = 1) {
     const { channel } = await this.connectionFactoryService.getConnection();
 
     const options = {
       persistent: true,
       timeout: 500,
-      headers: { 'x-delay': 1000 }, // 1000 ms
+      headers: { 'x-delay': delay, [CURRENT_TRY]: currentTry },
     };
 
     try {

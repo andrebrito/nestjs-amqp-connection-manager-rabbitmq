@@ -7,9 +7,9 @@ export class AppService {
 
   // AMQP Connection Manager
   async post() {
-    const res = await this.amqpService.emit(
-      `Emitting at ${new Date().toLocaleTimeString()}`,
-    );
+    const res = await this.amqpService.emit({
+      emitDate: new Date().toLocaleTimeString(),
+    });
 
     console.log('response', res);
 

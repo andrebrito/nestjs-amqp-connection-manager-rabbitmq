@@ -1,12 +1,16 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { ChannelWrapper } from 'amqp-connection-manager';
 import { Channel, ConsumeMessage } from 'amqplib';
+import { AmqpProducerService } from './amqp-producer.service';
 import { ConnectionFactoryService } from './connection-factory.service';
-import { QUEUE } from './global';
+import { CURRENT_TRY, MAX_TRIES, QUEUE } from './global';
 
 @Injectable()
 export class AmqpConsumerService implements OnApplicationBootstrap {
-  constructor(private connectionFactoryService: ConnectionFactoryService) {}
+  constructor(
+    private connectionFactoryService: ConnectionFactoryService,
+    private producerService: AmqpProducerService,
+  ) {}
 
   onApplicationBootstrap() {
     this.connectionFactoryService
@@ -22,13 +26,44 @@ export class AmqpConsumerService implements OnApplicationBootstrap {
       );
   }
 
-  private handle(message: ConsumeMessage, channel: ChannelWrapper) {
+  private async handle(message: ConsumeMessage, channel: ChannelWrapper) {
+    const content = Buffer.from(message.content).toString();
+    const hasCurrentTry = !!message.properties.headers[CURRENT_TRY];
+    const currentTry = Number(message.properties.headers[CURRENT_TRY]) || 1;
+    const currentDelay = Number(message.properties.headers['x-delay']) || 1000;
+
     console.log(
       'acking message...',
-      message.properties.headers['x-delay'],
-      Buffer.from(message.content).toString(),
+      'x-delay',
+      currentDelay,
+      'current try',
+      currentTry,
+      'max tries',
+      MAX_TRIES,
+      content,
     );
 
+    if (!hasCurrentTry) {
+      console.log('acking message.');
+      return channel.ack(message);
+      return;
+    }
+
+    if (currentTry === MAX_TRIES) {
+      console.log('nacking message, without requeuing...');
+      channel.nack(message, false, false);
+      return;
+    }
+
+    console.log('acking message for further requeue');
     channel.ack(message);
+
+    const nextTry = currentTry + 1;
+
+    await this.producerService.emit(
+      JSON.parse(content),
+      currentDelay * nextTry,
+      nextTry,
+    );
   }
 }
