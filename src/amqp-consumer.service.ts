@@ -50,7 +50,7 @@ export class AmqpConsumerService implements OnApplicationBootstrap {
     }
 
     if (currentTry === MAX_TRIES) {
-      console.log('nacking message, without requeuing...');
+      console.log('nacking message...');
       channel.nack(message, false, false);
       return;
     }

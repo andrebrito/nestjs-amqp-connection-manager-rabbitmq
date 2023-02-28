@@ -14,14 +14,30 @@ export class ConnectionFactoryService {
 
     this.channelWrapper = this.connection.createChannel({
       json: true,
-      setup: (channel: Channel) => {
-        // Dead Letter
-        // channel.assertQueue('');
-
-        channel.assertQueue(QUEUE, { durable: true });
+      setup: async (channel: Channel) => {
         channel.assertExchange(EXCHANGE, 'x-delayed-message', {
           durable: true,
           arguments: { 'x-delayed-type': 'direct' },
+        });
+
+        // Dead Letter Exchange
+        const dlxName = `dl.${EXCHANGE}`;
+        channel.assertExchange(dlxName, 'direct', { durable: true });
+
+        // Dead Letter Queue
+        const dlQueue = `dl.${QUEUE}`;
+        channel.assertQueue(dlQueue, {
+          durable: true,
+        });
+
+        // Dead Letter Routing Key
+        const dlRoutingKey = `dl.${ROUTING_KEY}`;
+        channel.bindQueue(dlQueue, dlxName, dlRoutingKey);
+
+        channel.assertQueue(QUEUE, {
+          durable: true,
+          deadLetterExchange: dlxName,
+          deadLetterRoutingKey: dlRoutingKey,
         });
 
         return channel.bindQueue(QUEUE, EXCHANGE, ROUTING_KEY);
