@@ -46,10 +46,16 @@ export class AmqpConsumerService implements OnApplicationBootstrap {
     if (!hasCurrentTry) {
       console.log('acking message.');
       return channel.ack(message);
-      return;
     }
 
+    const isPm = content.includes('PM');
+
     if (currentTry === MAX_TRIES) {
+      if (isPm) {
+        console.log('acking cause pm.');
+        return channel.ack(message);
+      }
+
       console.log('nacking message...');
       channel.nack(message, false, false);
       return;
